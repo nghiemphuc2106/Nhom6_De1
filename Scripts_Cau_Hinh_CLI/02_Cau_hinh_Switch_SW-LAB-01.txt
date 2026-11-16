@@ -1,0 +1,108 @@
+! =========================================================================
+! SCRIPT CẤU HÌNH SWITCH TRUNG TÂM KHU A: SW-LAB-01 (Cisco Catalyst 2960-24TT)
+! ĐỀ TÀI 1: MẠNG LAN CHO PHÒNG THỰC HÀNH 30 MÁY (SUBNET 192.168.10.0/26)
+! Vai trò: Kết nối Server (Fa0/1), Printer (Fa0/2), 15 PC Khu A (Fa0/3-Fa0/17),
+!          Uplink lên Router R-LAB-GW (Gi0/1) và Trunk sang SW-LAB-02 (Gi0/2).
+! Hướng dẫn: Mở SW-LAB-01 -> Tab CLI -> Nhấn Enter -> Copy toàn bộ & Paste!
+! =========================================================================
+
+enable
+configure terminal
+
+! 1. Đặt tên thiết bị và tắt tra cứu DNS khi gõ nhầm lệnh
+hostname SW-LAB-01
+no ip domain-lookup
+
+! 2. Cấu hình mật khẩu quản trị và mã hóa toàn bộ mật khẩu trong running-config
+enable secret DaiNam@2026
+service password-encryption
+
+! 3. Cấu hình thông điệp cảnh báo đăng nhập (Banner MOTD)
+banner motd #
+***********************************************************************
+* CANH BAO: THIET BI CHUYEN MACH TRUNG TAM SW-LAB-01 (KHU VUC A)      *
+* PHONG THUC HANH MAY TINH 30 MAY - KHOA CNTT - DAI HOC DAI NAM       *
+* MOI TRUY CAP TRAI PHEP SE BI GHI LOG VA XU LY THEO QUY DINH!        *
+***********************************************************************
+#
+
+! 4. Bảo mật cổng Console và cổng VTY (Telnet/SSH)
+line console 0
+ password Console@123
+ login
+ logging synchronous
+ exec-timeout 15 0
+ exit
+
+line vty 0 15
+ password Telnet@123
+ login
+ logging synchronous
+ exec-timeout 15 0
+ transport input telnet ssh
+ exit
+
+! 5. Cấu hình IP quản trị (Management IP) trên SVI VLAN 1 và Default Gateway
+interface Vlan1
+ description MANAGEMENT_SVI_SW-LAB-01
+ ip address 192.168.10.2 255.255.255.192
+ no shutdown
+ exit
+
+ip default-gateway 192.168.10.1
+
+! 6. Cấu hình cổng kết nối Máy chủ (Fa0/1) và Máy in dùng chung (Fa0/2)
+interface FastEthernet0/1
+ description SERVER_SRV-LAB-01_192.168.10.5
+ switchport mode access
+ switchport access vlan 1
+ spanning-tree portfast
+ no shutdown
+ exit
+
+interface FastEthernet0/2
+ description PRINTER_PRN-LAB-01_192.168.10.6
+ switchport mode access
+ switchport access vlan 1
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! 7. Cấu hình dải cổng kết nối 15 Máy trạm Khu A (PC01 -> PC15: Fa0/3 -> Fa0/17)
+interface range FastEthernet0/3 - 17
+ description ACCESS_PORTS_KHU_A_PC01_TO_PC15
+ switchport mode access
+ switchport access vlan 1
+ spanning-tree portfast
+ no shutdown
+ exit
+
+! 8. Tắt (Shutdown) các cổng dự phòng không sử dụng (Fa0/18 -> Fa0/24) để bảo mật
+interface range FastEthernet0/18 - 24
+ description UNUSED_PORTS_SHUTDOWN_FOR_SECURITY
+ switchport mode access
+ shutdown
+ exit
+
+! 9. Cấu hình cổng Uplink lên Router R-LAB-GW (Gi0/1) và Trunk sang SW-LAB-02 (Gi0/2)
+interface GigabitEthernet0/1
+ description UPLINK_TO_ROUTER_R-LAB-GW_Gi0/0
+ switchport mode access
+ switchport access vlan 1
+ no shutdown
+ exit
+
+interface GigabitEthernet0/2
+ description TRUNK_INTERLINK_TO_SW-LAB-02_Gi0/1
+ switchport mode trunk
+ no shutdown
+ exit
+
+! 10. Lưu cấu hình vào NVRAM
+end
+copy running-config startup-config
+
+! Kiểm tra nhanh trạng thái sau khi cấu hình
+show ip interface brief
+show interfaces status
+

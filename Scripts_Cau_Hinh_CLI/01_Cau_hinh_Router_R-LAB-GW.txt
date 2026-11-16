@@ -1,0 +1,89 @@
+! =========================================================================
+! SCRIPT CẤU HÌNH ROUTER GATEWAY & DHCP SERVER: R-LAB-GW (Cisco 2911)
+! ĐỀ TÀI 1: MẠNG LAN CHO PHÒNG THỰC HÀNH 30 MÁY (SUBNET 192.168.10.0/26)
+! Hướng dẫn: Mở Router R-LAB-GW -> Tab CLI -> Nếu hỏi "Would you like to
+! enter the initial configuration dialog? [yes/no]:" thì gõ: no -> Enter
+! Sau đó Copy toàn bộ nội dung bên dưới và Paste vào cửa sổ CLI.
+! =========================================================================
+
+enable
+configure terminal
+
+! 1. Cấu hình tên thiết bị và tắt phân giải tên miền khi gõ sai lệnh
+hostname R-LAB-GW
+no ip domain-lookup
+
+! 2. Cấu hình mật khẩu bảo mật và mã hóa mật khẩu
+enable secret DaiNam@2026
+service password-encryption
+
+! 3. Cấu hình thông điệp cảnh báo đăng nhập (Banner MOTD)
+banner motd #
+***********************************************************************
+* CANH BAO: HE THONG ROUTER GATEWAY PHONG THUC HANH MAY TINH (R-LAB)  *
+* KHOA CONG NGHE THONG TIN - TRUONG DAI HOC DAI NAM                   *
+* CHI NHUNG QUAN TRI VIEN DUOC UY QUYEN MOI DUOC PHEP TRUY CAP!       *
+***********************************************************************
+#
+
+! 4. Bảo mật cổng Console và cổng truy cập từ xa VTY (Telnet/SSH)
+line console 0
+ password Console@123
+ login
+ logging synchronous
+ exec-timeout 15 0
+ exit
+
+line vty 0 4
+ password Telnet@123
+ login
+ logging synchronous
+ exec-timeout 15 0
+ transport input telnet ssh
+ exit
+
+! 5. Cấu hình tài khoản Local và SSH cơ bản
+ip domain-name fit.dainam.edu.vn
+username admin privilege 15 secret Admin@2026
+crypto key generate rsa
+1024
+ip ssh version 2
+
+! 6. Cấu hình cổng kết nối mạng LAN phòng máy (GigabitEthernet0/0)
+interface GigabitEthernet0/0
+ description GATEWAY_LAN_PHONG_THUC_HANH_30_MAY_UPLINK_TO_SW-LAB-01
+ ip address 192.168.10.1 255.255.255.192
+ no shutdown
+ exit
+
+! 7. Tắt các cổng không sử dụng trên Router để đảm bảo an toàn
+interface GigabitEthernet0/1
+ description UNUSED_PORT_SHUTDOWN
+ shutdown
+ exit
+
+interface GigabitEthernet0/2
+ description UNUSED_PORT_SHUTDOWN
+ shutdown
+ exit
+
+! 8. Cấu hình dịch vụ cấp phát IP tự động DHCP cho 30 PC thực hành
+! Loại trừ dải IP hạ tầng (192.168.10.1 -> .10) và dải IP dự phòng (.41 -> .62)
+ip dhcp excluded-address 192.168.10.1 192.168.10.10
+ip dhcp excluded-address 192.168.10.41 192.168.10.62
+
+ip dhcp pool LAB_PHONG_MAY_30PC
+ network 192.168.10.0 255.255.255.192
+ default-router 192.168.10.1
+ dns-server 192.168.10.5
+ domain-name fit.dainam.edu.vn
+ exit
+
+! 9. Lưu cấu hình vào bộ nhớ NVRAM
+end
+copy running-config startup-config
+
+! Hiển thị kiểm tra nhanh sau khi cấu hình
+show ip interface brief
+show ip dhcp pool
+

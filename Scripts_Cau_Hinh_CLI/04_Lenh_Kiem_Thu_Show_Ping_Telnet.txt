@@ -1,0 +1,75 @@
+! =========================================================================
+! TỔNG HỢP LỆNH KIỂM THỬ (SHOW, PING, TRACEROUTE, TELNET) CHO BÁO CÁO ĐỀ TÀI 1
+! Dùng để chạy lấy log và chụp màn hình minh chứng trong Chương 3
+! =========================================================================
+
+! -------------------------------------------------------------------------
+! PHẦN 1: CÁC LỆNH KIỂM TRA TRÊN ROUTER R-LAB-GW
+! -------------------------------------------------------------------------
+enable
+! Nhập mật khẩu: DaiNam@2026
+
+show ip interface brief
+show ip dhcp binding
+show ip dhcp pool
+show ip route
+show arp
+show running-config
+
+! -------------------------------------------------------------------------
+! PHẦN 2: CÁC LỆNH KIỂM TRA TRÊN SWITCH SW-LAB-01 VÀ SW-LAB-02
+! -------------------------------------------------------------------------
+enable
+! Nhập mật khẩu: DaiNam@2026
+
+show ip interface brief
+show interfaces status
+show interfaces trunk
+show vlan brief
+show mac-address-table
+show spanning-tree
+show running-config
+
+! Kiểm tra ping từ Switch đến Gateway, Server, Printer và Switch còn lại
+ping 192.168.10.1
+ping 192.168.10.3
+ping 192.168.10.5
+ping 192.168.10.6
+
+! -------------------------------------------------------------------------
+! PHẦN 3: CÁC LỆNH KIỂM THỬ TRÊN COMMAND PROMPT CỦA PC (Ví dụ: PC01 và PC30)
+! Mở PC01 -> Tab Desktop -> Command Prompt -> Gõ lần lượt các lệnh sau:
+! -------------------------------------------------------------------------
+
+! 1. Kiểm tra thông số IP/26, Subnet Mask, Default Gateway và DNS nhận qua DHCP
+ipconfig /all
+
+! 2. Kiểm tra kết nối tới Default Gateway (R-LAB-GW)
+ping 192.168.10.1
+
+! 3. Kiểm tra kết nối tới IP Quản trị của 2 Switch (SW-LAB-01 và SW-LAB-02)
+ping 192.168.10.2
+ping 192.168.10.3
+
+! 4. Kiểm tra kết nối tới Máy chủ học liệu (SRV-LAB-01) và Máy in dùng chung (PRN-LAB-01)
+ping 192.168.10.5
+ping 192.168.10.6
+
+! 5. Kiểm tra kết nối liên thông giữa máy trạm Khu A (PC01 - .10.11) sang Khu B (PC30 - .10.40)
+ping 192.168.10.40
+tracert 192.168.10.40
+
+! 6. Kiểm tra phân giải tên miền DNS nội bộ tới Máy chủ và Máy in
+nslookup lab.dainam.edu.vn
+nslookup printer.dainam.edu.vn
+ping lab.dainam.edu.vn
+
+! 7. Kiểm tra bảng ARP trên máy trạm sau khi ping
+arp -a
+
+! 8. Kiểm tra truy cập quản trị từ xa vào Switch SW-LAB-01 và SW-LAB-02 qua Telnet
+telnet 192.168.10.2
+! Mật khẩu VTY: Telnet@123
+! Gõ enable -> Mật khẩu: DaiNam@2026
+! Gõ exit để thoát phiên Telnet
+
